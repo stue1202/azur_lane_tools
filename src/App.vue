@@ -8,7 +8,7 @@
     </div>
     <div v-if="is_sign_in">
       <h5>歡迎{{ Userinfo.userid }}</h5>
-      <button @click="log_out">登出</button>
+      <button @click="log_out()">登出</button>
     </div>
     
     
@@ -23,13 +23,13 @@
         </div>
          <!--網格-->
         <div id="shipgrid">
-            <button v-bind:style="{backgroundImage:getButtom_style(5,index)}" @click="open_ship_list(5,index)" class="ship"></button>
-            <button v-bind:style="{backgroundImage:getButtom_style(4,index)}" @click="open_ship_list(4,index)" class="ship"></button>
-            <button v-bind:style="{backgroundImage:getButtom_style(3,index)}" @click="open_ship_list(3,index)" class="ship"></button>
+            <img :src="getButtom_style(5,index)" @click="open_ship_list(5,index)" class="ship">
+            <img :src="getButtom_style(4,index)" @click="open_ship_list(4,index)" class="ship">
+            <img :src="getButtom_style(3,index)" @click="open_ship_list(3,index)" class="ship">
 
-            <button v-bind:style="{backgroundImage:getButtom_style(2,index)}" @click="open_ship_list(2,index)" class="ship"></button>
-            <button v-bind:style="{backgroundImage:getButtom_style(1,index)}" @click="open_ship_list(1,index)" class="ship"></button>
-            <button v-bind:style="{backgroundImage:getButtom_style(0,index)}" @click="open_ship_list(0,index)" class="ship"></button>
+            <img :src="getButtom_style(2,index)" @click="open_ship_list(2,index)" class="ship">
+            <img :src="getButtom_style(1,index)" @click="open_ship_list(1,index)" class="ship">
+            <img :src="getButtom_style(0,index)" @click="open_ship_list(0,index)" class="ship">
         </div>
        
       </li>
@@ -38,7 +38,7 @@
   <button @click="close_ship_list" id="close_ship_list" v-if="show_shiplist">X</button>
     <!--彈出式選單-->
     <!--篩選部分-->
-    <Transition name="fade"><div v-if="show_shiplist" id="popup_shiplist">  
+    <div v-if="show_shiplist" id="popup_shiplist">  
             <div id="fliter">
             陣營：
             <select>
@@ -67,24 +67,23 @@
         <!--載入所有船-->
         <div id="shipsort">
             <div v-for="(item,index) in ship_data" :key=index class="shipitem" @click="chosen_character(item)">
-                <img v-bind:src="item.imgurl">
+              <img :src="require(`@/assets/shipicon/${item.shipname}.png`)" />
                 <div>{{ item.shipname }}</div>
             </div>
         </div> 
-    </div></Transition>
-    <Transition name="fade"><div v-if="show_login_windows_val" id="popup_login">  
+    </div>
+    <div v-if="show_login_windows_val" id="popup_login">  
             <div>登入</div>
             <input type="text" v-model="Userinfo.userid">
             <input type="password" v-model="Userinfo.userpassword">
             <button @click="login()">登入</button>
             <button @click="sign_up()">註冊</button>
             <button @click="show_login_windows(false)">取消</button>
-    </div></Transition>
-
+    </div>
 </template>
 
 <script setup>
-import { ref, reactive,onMounted,watchEffect } from 'vue';
+import { ref, reactive,onMounted, watchEffect } from 'vue';
 import axios from 'axios';
 
 const Userinfo=ref({userid:'',userpassword:''})
@@ -92,11 +91,7 @@ const is_sign_in=ref(false);
 
 const fleetname = ref('');
 const fleet_list = reactive([]);
-const log_out=()=>{
-  Userinfo.value.userpassword='';
-  Userinfo.value.userid='';
-  is_sign_in.value=false;
-}
+
 
 const show_shiplist = ref(false);
 const chosen_buttonid=ref(0);
@@ -107,15 +102,14 @@ const show_login_windows=(r)=>{
   show_login_windows_val.value=r;
 }
 
-const add_fleet = () => {
-  if (fleetname.value.trim() !== '') {
-    fleet_list.push({
-      name:fleetname.value,
-      imgurl:["","","","","",""]
-      });
-    fleetname.value = '';
-  }
-};
+
+//登入登出
+const log_out=()=>{
+  Userinfo.value.userpassword='';
+  Userinfo.value.userid='';
+  fleet_list.length=0;
+  is_sign_in.value=false;
+}
 
 const login=()=>{
   if(Userinfo.value.userid.trim()!=='' && Userinfo.value.userpassword.trim()!==''){
@@ -131,12 +125,13 @@ const login=()=>{
     Response.data.forEach(item=>{
       fleet_list.push(item);
     })
+    is_sign_in.value=true;
+    show_login_windows_val.value=false;
     }).catch(error=>{
       window.alert("無法登入："+error.toString());
       console.log(error);
     })
-    is_sign_in.value=true;
-    show_login_windows_val.value=false;
+    
   }
   else{
     window.alert("請輸入完整");
@@ -152,28 +147,22 @@ const sign_up=()=>{
       'Content-Type': 'application/json', // 请求头
       // 其他请求头配置
     },
-    responseType: 'json' // 响应类型
-    // 其他配置选项
+    responseType: 'json' 
   }).then(Response=>{
-    fleet_list.length=0;
-    Response.data.forEach(item=>{
-      fleet_list.push(item);
-    })
+    console.log(Response.toString)
     }).catch(error=>{
       window.alert("無法註冊："+error.toString());
       console.log(error);
     })
-    //Userinfo.value={name:'',password:''};
-    show_login_windows_val.value=false;
+
   }
   else{
     window.alert("請輸入完整");
   }
 }
-
-watchEffect(() => {
+watchEffect(()=>{
   if(is_sign_in.value){
-    axios.post('http://localhost:8081/'+Userinfo.value.userid+'/upload',fleet_list, // 数据
+    axios.post('http://localhost:8081/'+Userinfo.value.userid+'/upload',fleet_list,
   {
     headers: {
       'Content-Type': 'application/json', // 请求头
@@ -187,21 +176,30 @@ watchEffect(() => {
       window.alert("無法更新資料："+error.toString());
       console.log(error);
     })
-  }}
-);
+  }
+})
 
-
+//程式內函式
+const add_fleet = () => {
+  if (fleetname.value.trim() !== '') {
+    fleet_list.push({
+      name:fleetname.value,
+      imgurl:["remove","remove","remove","remove","remove","remove"]
+    });
+    fleetname.value = '';
+  }
+};
 
 const remove_fleet = (index) => {
   fleet_list.splice(index,1);
 };
 
 const getButtom_style = (button_id, fleet_id) => {
-  return `url(${fleet_list[fleet_id].imgurl[button_id]})`;
+  return require(`@/assets/shipicon/${fleet_list[fleet_id].imgurl[button_id]}.png`);
 };
 
 const chosen_character = (item) => {
-  fleet_list[chosen_fleet_index.value].imgurl[chosen_buttonid.value] = item.imgurl;
+  fleet_list[chosen_fleet_index.value].imgurl[chosen_buttonid.value] = item.shipname;
   close_ship_list();
 }
 
@@ -220,12 +218,10 @@ const getpic = () => {
   const requireContext = require.context('@/assets/shipicon', true, /\.(png|jpe?g|svg)$/);
   const paths = requireContext.keys();
   paths.forEach((path) => {
-    ship_data.push({ imgurl: requireContext(path), shipname: getname(path),});
-   
+    ship_data.push({shipname: getname(path)});
+    
   });
 };
-
-
 
 const getname=(path)=>{
     const temp=path.split("/");
@@ -286,6 +282,7 @@ li {
   width: 100px;
   height: 100px;
   margin: 5px;
+  border:none;
   background-color: transparent;
 
 }
